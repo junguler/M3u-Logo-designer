@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M3U Logo Designer</title>
+<style>
+/* Concrete Signal - shared look for the M3U tool pages. System fonts only, no external requests. */
+:root {
+  --concrete: #2b2b2b;
+  --panel: #1a1a1a;
+  --line: #e6e6e6;
+  --ink: #000000;
+  --text: #ffffff;
+  --muted: #bdbdbd;
+  --orange: #ff6a1a;
+  --pink: #ff4fa3;
+  --violet: #a77bff;
+  --green: #3ddc84;
+  --yellow: #ffd100;
+  --red: #ff3b30;
+  --blue: #3d8bff;
+  --bw: 4px;
+  --mono: ui-monospace, Consolas, "Courier New", monospace;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px 10px 60px;
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--concrete);
+  color: var(--text);
+}
+h1 {
+  margin: -20px -20px 18px;
+  padding: 8px 14px;
+  background: var(--yellow);
+  color: var(--ink);
+  border-bottom: var(--bw) solid var(--yellow);
+  font-size: 1.9em;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.container {
+  position: relative;
+  width: 660px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--panel);
+  border: var(--bw) solid var(--line);
+  box-shadow: 10px 10px 0 var(--ink);
+  text-align: left;
+}
+.input-group { display: flex; align-items: center; gap: 10px; }
+textarea, input, select {
+  flex-grow: 1;
+  min-width: 0;
+  margin: 5px 0;
+  padding: 10px;
+  border: var(--bw) solid var(--line);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--text);
+  font: inherit;
+}
+input[type='file']::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--orange);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 900;
+  -webkit-text-stroke: 0.6px currentColor;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+input[type='file']::file-selector-button:hover { filter: brightness(1.1); }
+::placeholder { color: var(--muted); opacity: 1; }
+textarea { resize: vertical; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+textarea:focus, input:focus, select:focus { border-color: var(--yellow); }
+
+/* Buttons: one colour per role, set through --c */
+button {
+  --c: var(--orange);
+  flex: none;
+  width: 130px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: var(--bw) solid var(--ink);
+  border-radius: 0;
+  background: var(--c);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95em;
+  font-weight: 900;
+  -webkit-text-stroke: 0.6px currentColor;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0 var(--text);
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.08); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--text); }
+button:active { box-shadow: none; transform: translate(3px, 3px); }
+button:disabled { opacity: 0.65; cursor: not-allowed; box-shadow: none; filter: grayscale(0.6); transform: none; }
+
+#fileCheckButton, #fileButton { --c: var(--orange); }
+#urlCheckButton, #urlButton { --c: var(--pink); }
+#textCheckButton, #textButton { --c: var(--violet); }
+.pause-button { display: none; --c: var(--blue); }
+.cancel-button { display: none; --c: var(--red); }
+
+#downloadButton {
+  display: none;
+  width: 260px;
+  height: 48px;
+  margin: 10px auto;
+  --c: var(--green);
+}
+#downloadReportButton, #downloadDeadButton {
+  display: none;
+  width: 260px;
+  height: 48px;
+  margin: 0 auto 10px auto;
+  --c: var(--yellow);
+}
+#viewImagesButton {
+  display: none;
+  width: 260px;
+  height: 48px;
+  margin: 0 auto 10px auto;
+  --c: var(--line);
+}
+.download-row { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+/* Output area */
+.output-wrapper {
+  position: relative;
+  width: 100%;
+  height: 110px;
+  min-width: 0;
+  min-height: 80px;
+  max-width: 100%;
+  max-height: 80vh;
+  margin: 5px 0 10px 0;
+  border: var(--bw) solid var(--line);
+  background: var(--ink);
+  resize: vertical;
+  overflow: auto;
+}
+.output-wrapper textarea#output {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85em;
+  resize: none;
+  overflow: auto;
+  display: block;
+}
+#summaryLine {
+  min-height: 1em;
+  margin: 5px 0 10px 0;
+  font-size: 0.85em;
+  color: var(--muted);
+  text-align: left;
+}
+
+/* Advanced settings panel */
+.advanced-settings {
+  margin: 5px 0 10px 0;
+  border: var(--bw) solid var(--line);
+  background: var(--ink);
+  text-align: left;
+}
+.advanced-settings summary {
+  padding: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.advanced-settings summary:hover { background: #222222; }
+.advanced-settings .settings-grid {
+  padding: 10px;
+  border-top: var(--bw) solid var(--line);
+  background: var(--panel);
+}
+.advanced-settings .settings-grid { display: flex; align-items: center; gap: 25px; }
+.settings-column { display: flex; }
+.numeric-column { gap: 10px; }
+.checkbox-column { flex-direction: column; gap: 8px; }
+.advanced-settings .setting-item { display: flex; flex-direction: column; font-size: 0.9em; }
+.advanced-settings .setting-item.checkbox-item { flex-direction: row; align-items: center; gap: 6px; }
+.advanced-settings input[type='number'] { width: 80px; flex-grow: 0; margin: 3px 0 0 0; padding: 6px; }
+.advanced-settings input[type='checkbox'] { flex-grow: 0; width: auto; margin: 0; padding: 0; accent-color: var(--orange); }
+
+.output-wrapper p#currentChecking {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 10px;
+  border: none;
+  background: var(--ink);
+  text-align: left;
+  white-space: normal;
+  overflow: hidden;
+  display: none;
+}
+.output-wrapper p#currentChecking .checking-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+@media (max-width: 560px) {
+  .input-group { flex-wrap: wrap; }
+  .input-group > input, .input-group > textarea { flex: 1 1 100%; }
+  .input-group > button { flex: 1 1 90px; width: auto; }
+  .settings .input-group { flex-wrap: nowrap; }
+  .settings .input-group > select { flex: 1 1 auto; }
+}
+
+/* Logo designer additions (layout only, same look) */
+.preview { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0; }
+#main { width: 320px; max-width: 100%; aspect-ratio: 1; border: var(--bw) solid var(--line); background: var(--ink); }
+.side { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+#thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#thumbs canvas { width: 100%; aspect-ratio: 1; border: 3px solid var(--line); background: var(--ink); }
+.advanced-settings .settings-grid.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 16px; align-items: start; }
+.advanced-settings .setting-item { min-width: 0; }
+.advanced-settings .setting-item input:not([type='checkbox']), .advanced-settings .setting-item select { margin: 3px 0 0 0; padding: 6px; }
+.advanced-settings .setting-item input[type='range'] { width: 100%; padding: 0; border: 0; background: none; accent-color: var(--orange); }
+.advanced-settings .setting-item input[type='color'] { width: 100%; height: 34px; padding: 0; }
+.advanced-settings .setting-item b { color: var(--yellow); }
+.advanced-settings .setting-item.checkbox-item input[type='checkbox'] { appearance: auto; flex: none; width: 16px; height: 16px; margin: 0; padding: 0; border: 0; background: transparent; accent-color: var(--orange); cursor: pointer; }
+.advanced-settings .setting-item.checkbox-item label { cursor: pointer; }
+.mid { display: flex; justify-content: center; }
+#rAll { --c: var(--pink); } #rCol { --c: var(--violet); } #rSty { --c: var(--blue); } #rRes { --c: var(--line); }
+#lkSave { --c: var(--yellow); } #lkLoad { --c: var(--orange); }
+#shAdd { --c: var(--orange); } #shRnd { --c: var(--violet); } #shClr { --c: var(--red); }
+#goButton { width: 260px; height: 48px; margin: 10px auto; --c: var(--green); }
+#cancelButton { display: none; width: 260px; height: 48px; margin: 0 auto 10px; --c: var(--red); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>M3U Logo Designer</h1>
+
+<div class="input-group"><input type="file" id="fileInput" accept=".m3u,.m3u8"><button id="fileButton">Load local file</button></div>
+<div class="input-group"><input type="text" id="urlInput" placeholder="Enter online M3U URL..."><button id="urlButton">Load Online Link</button></div>
+<div class="input-group"><textarea id="textInput" rows="3" placeholder="Paste M3U content here..."></textarea><button id="textButton">Load Pasted streams</button></div>
+<p id="summaryLine">Load a playlist, or just design with the sample names below.</p>
+
+<div class="preview">
+<canvas id="main" width="384" height="384"></canvas>
+<div class="side"><select id="sample" title="Station shown in the big preview"></select><div id="thumbs"></div></div>
+</div>
+
+<div class="input-group">
+<button id="rAll">Randomize all</button><button id="rCol">Random colors</button><button id="rSty">Random style</button><button id="rRes">Reset</button>
+</div>
+<div class="input-group" style="margin-top:10px"><button id="lkSave">Save look</button><button id="lkLoad">Load look</button><input type="file" id="lkFile" accept=".json,application/json" style="display:none"></div>
+<div id="panels" style="margin-top:10px"></div>
+
+<div class="output-wrapper"><textarea id="output" readonly placeholder="The updated playlist appears here after generating."></textarea></div>
+<div class="mid"><button id="goButton">Generate ZIP</button></div>
+<div class="mid"><button id="cancelButton">Cancel</button></div>
+<a id="dl" style="display:none"></a>
+</div>
+
+<script>
+(() => {
+'use strict';
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) { r = Math.min(Array.isArray(r) ? r[0] : r, w / 2, h / 2); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); };
+const $ = (id) => document.getElementById(id);
+const NAMES = ['Sans','Impact','Serif','Mono','Trebuchet','Palatino','Script','Arial Black','Courier','Verdana','Geometric','Display'];
+const FONTS = ['system-ui,"Segoe UI",Arial,sans-serif','Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif','Georgia,"Times New Roman",serif','ui-monospace,Consolas,"Courier New",monospace','"Trebuchet MS",Verdana,sans-serif','"Palatino Linotype","Book Antiqua",serif','"Brush Script MT","Segoe Script",cursive','"Arial Black",Gadget,sans-serif','"Courier New",monospace','Verdana,Geneva,sans-serif','Futura,"Century Gothic",Avenir,sans-serif','Copperplate,Papyrus,fantasy'];
+const SHT = ['square','circle','triangle','diamond','pentagon','hexagon','star','ring','cross','semicircle','parallelogram'];
+const DEMO = ['Jazz FM','Radio Paradise','Lo-Fi Beats 24/7','BBC World Service (HD)','Classic Rock 101','Nova 100 - Melbourne'];
+
+/* [id, label, type(r range|s select|c color|k check|t text), default, min|options, max, step] */
+const G = [
+['Background',[['bgm','Mode','s','linear',['solid','linear','radial','conic','mesh']],['c1','Color 1','c','#ff6a1a'],['c2','Color 2','c','#a77bff'],['c3','Color 3','c','#ff4fa3'],['tri','Use color 3','k',true],['hard','Hard stops (bands)','k',false],['ang','Angle','r',135,0,360]]],
+['Shape',[['rad','Corner radius %','r',0,0,50],['matte','Matte color (outside mask)','c','#000000']]],
+['Pattern overlay',[['pat','Pattern','s','none',['none','stripes','dots','grid','checker','rings','rays','waves','zigzag','crosses']],['pc','Color','c','#ffffff'],['pa','Opacity %','r',18,0,100],['ps','Cell size','r',40,8,160],['pw','Weight %','r',40,5,95],['pr','Rotation','r',45,0,180]]],
+['Text',[['src','Text from title','s','cleaned',['full','cleaned','initials','first word','first two words','last word']],['cs','Case','s','UPPER',['as is','UPPER','lower','Title']],['font','Font','s','Impact',NAMES],['wt','Weight','r',800,100,900,100],['it','Italic','k',false],['fs','Max size %','r',100,20,100],['tp','Margin %','r',10,2,30],['lh','Line height %','r',100,60,160],['ls','Letter spacing','r',0,-4,30],['al','Align','s','center',['left','center','right']],['rot','Rotate','r',0,-90,90],['tx','Offset X %','r',0,-40,40],['ty','Offset Y %','r',0,-40,40],['tm','Fill','s','solid',['solid','gradient','auto contrast','rainbow']],['t1','Text color','c','#ffffff'],['t2','Text color 2','c','#ffd100'],['tc','Text contrast % (color push, halo, backing glow)','r',0,0,100]]],
+['Stroke',[['sw','Stroke width','r',8,0,40],['sc','Stroke color','c','#000000'],['sj','Join','s','round',['round','miter','bevel']],['sw2','Outer stroke','r',0,0,40],['sc2','Outer color','c','#ffd100']]],
+['Shadow & depth',[['shx','Shadow X','r',0,-40,40],['shy','Shadow Y','r',0,-40,40],['shb','Shadow blur','r',0,0,60],['sha','Shadow opacity %','r',80,0,100],['shc','Shadow color','c','#000000'],['gl','Glow','r',0,0,80],['glc','Glow color','c','#ffd100'],['ex','Extrude depth','r',0,0,60],['exa','Extrude angle','r',45,0,360],['exc','Extrude color','c','#000000']]],
+['Frame',[['bw','Border','r',0,0,60],['bc','Border color','c','#ffffff'],['bw2','Inner line','r',0,0,30],['bc2','Inner color','c','#000000'],['bgp','Inner gap','r',10,0,40]]],
+['Effects',[['vig','Vignette','r',0,0,100],['grain','Grain','r',0,0,100],['scan','Scanlines','r',0,0,100],['rgb','RGB split','r',0,0,30],['gli','Glitch','r',0,0,20],['br','Brightness %','r',100,20,200],['ct','Contrast %','r',100,20,200],['sa','Saturation %','r',100,0,250],['hue','Hue rotate','r',0,0,360],['inv','Invert','k',false],['pix','Pixelate','r',1,1,32]]],
+['Dither',[['dm','Method','s','none',['none','Bayer 2x2','Bayer 4x4','Bayer 8x8','Floyd-Steinberg','Atkinson','Random']],['dl','Levels per channel','r',4,2,16],['dcm','Color','s','original',['original','grayscale','two-tone']],['d1','Dark tone','c','#0f380f'],['d2','Light tone','c','#9bbc0f'],['dsc','Cell size','r',2,1,8]]],
+['Shapes',[['shn','Random shapes (count)','r',0,0,24],['shl','Random shapes layer','s','behind text',['behind text','over text','mixed']],['shmn','Random min size %','r',8,2,100],['shmx','Random max size %','r',40,2,100],['sho','Random max opacity %','r',70,10,100],['shc2','Random shape colors','s','palette',['palette','random']],['n_t','New shape: type','s','circle',SHT],['n_col','New shape: color','c','#ffd100'],['n_sz','New shape: size %','r',30,2,100],['n_x','New shape: X %','r',0,-50,50],['n_y','New shape: Y %','r',0,-50,50],['n_rot','New shape: rotation','r',0,0,360],['n_op','New shape: opacity %','r',100,5,100],['n_fill','New shape: style','s','filled',['filled','outline']],['n_lw','New shape: outline width','r',6,1,40],['n_l','New shape: layer','s','behind text',['behind text','over text']]]],
+['Randomize',[['rp','Randomize amount % (buttons + each entry)','r',100,0,100,5],['each','Randomize each entry','k',false],['rd','Keep text readable when randomizing','k',true],['rdm','Minimum text contrast % when randomizing','r',40,0,100]]],
+['Variation & export',[['vm','Vary per station','s','identical',['identical','hue shift','random colors','random style']],['seed','Seed','r',1,1,999],['size','Image size px','s','512',['128','256','384','512','768','1024']],['q','JPEG quality','r',90,40,100],['pre','Folder in zip','t','logos/'],['ow','Replace existing tvg-logo','k',false],['plain','Plain filenames (no hash)','k',false],['useurl','Write full URLs in tvg-logo','k',false],['urlpre','Logo URL prefix','t','https://raw.githubusercontent.com/USER/REPO/main/logos/']]]
+];
+const ALL = G.flatMap(([g, it]) => it.map(([id, lab, ty, def, a, b, st]) => ({ id, lab, ty, def, a, b, st, g })));
+const CM = Object.fromEntries(ALL.map((c) => [c.id, c]));
+const V = {};
+ALL.forEach((c) => (V[c.id] = c.def));
+
+/* ---------- helpers ---------- */
+const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const lum = (h) => { const [r, g, b] = rgb(h); return (.299 * r + .587 * g + .114 * b) / 255; };
+const hsl = (h, s, l) => { h = ((h % 360) + 360) % 360; s /= 100; l /= 100; const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))); return '#' + [f(0), f(8), f(4)].map((v) => v.toString(16).padStart(2, '0')).join(''); };
+const hash = (s) => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const rng = (a) => () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const bay = (n) => { let m = [[0]]; while (m.length < n) { const s = m.length, q = []; for (let i = 0; i < 2 * s; i++) { q[i] = []; for (let j = 0; j < 2 * s; j++) q[i][j] = 4 * m[i % s][j % s] + [0, 2, 3, 1][(i >= s ? 2 : 0) + (j >= s ? 1 : 0)]; } m = q; } return m; };
+
+/* ---------- randomizer ---------- */
+const SKIP = ['size','q','pre','ow','vm','seed','src','cs','matte','hue','rp','each','rd','rdm','plain','useurl','urlpre'];
+const FXG = ['Effects','Dither','Shadow & depth','Frame','Pattern overlay','Shapes'];
+const SP = { shn:[0,10], tc:[0,60], br:[80,130], ct:[85,140], sa:[70,170], rot:[-20,20], tx:[0,0], ty:[-8,8], fs:[75,100], sw:[0,16], sw2:[0,16], ex:[0,30], shx:[-14,14], shy:[-14,14], shb:[0,25], pix:[1,12], dl:[2,8], gli:[0,10], rgb:[0,12], gl:[0,40], bw:[0,30], vig:[0,70], grain:[0,50], scan:[0,60] };
+function randomize(o, scope, r, pct = 100) {
+  const p = pct / 100;
+  if (scope !== 'style') {
+    const h = r() * 360, tp = r(), hs = tp < .34 ? [30, -30] : tp < .67 ? [180, 150] : [120, 240], dark = r() < .55, L = dark ? [14, 34] : [60, 84], rl = () => L[0] + r() * (L[1] - L[0]);
+    const txt = dark ? hsl(h + hs[0], 90, 88) : hsl(h, 70, 10), edge = dark ? hsl(h, 70, 6) : hsl(h, 20, 96), acc = hsl(h + hs[0] + 60, 95, 55);
+    const PAL = { c1: hsl(h, 60 + r() * 40, rl()), c2: hsl(h + hs[0], 60 + r() * 40, rl()), c3: hsl(h + hs[1], 60 + r() * 40, rl()), t1: txt, t2: hsl(h + hs[1], 95, dark ? 72 : 22), sc: edge, sc2: acc, pc: txt, shc: edge, glc: acc, exc: edge, bc: txt, bc2: edge, d1: hsl(h, 60, 8), d2: hsl(h + hs[0], 70, 82) };
+    for (const kk in PAL) if (r() < p) o[kk] = PAL[kk];
+    if (scope === 'colors') { if (o.rd) o.tc = Math.max(o.tc, o.rdm); return; }
+  }
+  for (const c of ALL) {
+    if (SKIP.includes(c.id) || c.id.startsWith('n_') || c.ty === 'c' || c.ty === 't' || r() >= p) continue;
+    if (FXG.includes(c.g) && r() < .55) { o[c.id] = c.def; continue; }
+    if (c.ty === 'r') { const [lo, hi] = SP[c.id] || [c.a, c.b], st = c.st || 1; o[c.id] = Math.round((lo + r() * (hi - lo)) / st) * st; }
+    else if (c.ty === 's') o[c.id] = c.a[(r() * c.a.length) | 0];
+    else o[c.id] = r() < .5;
+  }
+  if (o.rd) o.tc = Math.max(o.tc, o.rdm);
+}
+
+const mix = (a, b, f) => { const A = rgb(a), B = rgb(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * f).toString(16).padStart(2, '0')).join(''); };
+function shape(x, N, s, k) {
+  const R = s.sz / 100 * N / 2, g = Math.PI, T = s.t;
+  x.save(); x.translate(N / 2 + s.x / 100 * N, N / 2 + s.y / 100 * N); x.rotate(s.rot * g / 180); x.globalAlpha = s.op / 100;
+  x.fillStyle = x.strokeStyle = s.col; x.lineWidth = Math.max(1, s.lw * k); x.lineJoin = 'round'; x.beginPath();
+  const P = (p) => p.forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b)));
+  if (T === 'circle' || T === 'ring') { x.arc(0, 0, R, 0, 7); if (T === 'ring') x.lineWidth = Math.max(x.lineWidth, R * .25); }
+  else if (T === 'square') x.rect(-R * .8, -R * .8, R * 1.6, R * 1.6);
+  else if (T === 'semicircle') x.arc(0, 0, R, g, 0);
+  else if (T === 'cross') { x.rect(-R, -R * .3, R * 2, R * .6); x.rect(-R * .3, -R, R * .6, R * 2); }
+  else if (T === 'parallelogram') P([[-R, R * .5], [-R * .4, -R * .5], [R, -R * .5], [R * .4, R * .5]]);
+  else { const n = { triangle: 3, diamond: 4, pentagon: 5, hexagon: 6, star: 5 }[T], m = T === 'star' ? 2 : 1, p = []; for (let i = 0; i < n * m; i++) { const a = -g / 2 + i * g * 2 / (n * m), r = m > 1 && i % 2 ? R * .45 : R; p.push([Math.cos(a) * r, Math.sin(a) * r]); } P(p); }
+  x.closePath(); (s.fill === 'outline' || T === 'ring') ? x.stroke() : x.fill(); x.restore();
+}
+function randShapes(o, title, r) {
+  const out = [], pal = [o.c1, o.c2, o.c3, o.t1, o.t2, o.pc, o.sc2];
+  for (let i = 0; i < o.shn; i++) out.push({ t: SHT[(r() * SHT.length) | 0], col: o.shc2 === 'random' ? hsl(r() * 360, 80, 55) : pal[(r() * pal.length) | 0], sz: o.shmn + r() * Math.max(0, o.shmx - o.shmn), x: (r() - .5) * 90, y: (r() - .5) * 90, rot: r() * 360, op: Math.min(o.sho, 20 + r() * (o.sho - 20)), fill: r() < .7 ? 'filled' : 'outline', lw: 2 + r() * 8, over: o.shl === 'over text' ? true : o.shl === 'mixed' ? r() < .5 : false });
+  return out;
+}
+
+/* ---------- drawing ---------- */
+const pixelate = (cv, b) => { const N = cv.width, n = Math.max(4, Math.round(N / b)), t = document.createElement('canvas'); t.width = t.height = n; t.getContext('2d').drawImage(cv, 0, 0, n, n); const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(t, 0, 0, N, N); x.imageSmoothingEnabled = true; };
+
+function dither(cv, o, k, rr) {
+  const N = cv.width, n = Math.max(8, Math.round(N / (o.dsc * k))), t = document.createElement('canvas');
+  t.width = t.height = n;
+  const c = t.getContext('2d'); c.drawImage(cv, 0, 0, n, n);
+  const im = c.getImageData(0, 0, n, n), d = im.data, L = o.dl - 1, mono = o.dcm !== 'original', nc = mono ? 1 : 3, f = new Float32Array(n * n * 3);
+  for (let i = 0; i < n * n; i++) { let r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2]; if (mono) r = g = b = .299 * r + .587 * g + .114 * b; f[i * 3] = r; f[i * 3 + 1] = g; f[i * 3 + 2] = b; }
+  const q = (v) => Math.round(Math.max(0, Math.min(255, v)) / 255 * L) / L * 255, st = 255 / L;
+  const bm = o.dm.startsWith('Bayer') ? bay(+o.dm.slice(6, 7)) : null;
+  const ed = o.dm === 'Floyd-Steinberg' ? [[1,0,7/16],[-1,1,3/16],[0,1,5/16],[1,1,1/16]] : o.dm === 'Atkinson' ? [[1,0,.125],[2,0,.125],[-1,1,.125],[0,1,.125],[1,1,.125],[0,2,.125]] : null;
+  for (let y = 0; y < n; y++) for (let xx = 0; xx < n; xx++) for (let ch = 0; ch < nc; ch++) {
+    const i = (y * n + xx) * 3 + ch, v = f[i];
+    if (bm) { const s = bm.length; f[i] = q(v + ((bm[y % s][xx % s] + .5) / (s * s) - .5) * st); }
+    else if (ed) { const nv = q(v), er = v - nv; f[i] = nv; for (const [dx, dy, w] of ed) { const ax = xx + dx, ay = y + dy; if (ax >= 0 && ax < n && ay < n) f[(ay * n + ax) * 3 + ch] += er * w; } }
+    else f[i] = q(v + (rr() - .5) * st);
+  }
+  const lo = rgb(o.d1), hi = rgb(o.d2);
+  for (let i = 0; i < n * n; i++) {
+    if (mono) { const v = f[i * 3] / 255; if (o.dcm === 'two-tone') for (let j = 0; j < 3; j++) d[i * 4 + j] = lo[j] + (hi[j] - lo[j]) * v; else d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = f[i * 3]; }
+    else for (let j = 0; j < 3; j++) d[i * 4 + j] = f[i * 3 + j];
+  }
+  c.putImageData(im, 0, 0);
+  const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(t, 0, 0, N, N); x.imageSmoothingEnabled = true;
+}
+
+function draw(cv, title, o) {
+  const N = cv.width, k = N / 512, cx = N / 2, x = cv.getContext('2d'), R = o.rad / 100 * N, r = rng(hash('m' + o.seed + title));
+  const path = (i, rad) => { x.beginPath(); x.roundRect(i, i, N - 2 * i, N - 2 * i, Math.max(0, rad)); };
+  x.fillStyle = o.matte; x.fillRect(0, 0, N, N);
+  x.save(); path(0, R); x.clip();
+
+  /* background */
+  const cols = o.tri ? [o.c1, o.c2, o.c3] : [o.c1, o.c2], a = o.ang * Math.PI / 180;
+  const stops = (g, cl) => { if (o.hard) cl.forEach((c, i) => { g.addColorStop(i / cl.length, c); g.addColorStop(Math.min(1, (i + 1) / cl.length - .0001), c); }); else cl.forEach((c, i) => g.addColorStop(i / (cl.length - 1), c)); return g; };
+  if (o.bgm === 'solid') x.fillStyle = o.c1;
+  else if (o.bgm === 'linear') { const dx = Math.cos(a) * N / 2, dy = Math.sin(a) * N / 2; x.fillStyle = stops(x.createLinearGradient(cx - dx, cx - dy, cx + dx, cx + dy), cols); }
+  else if (o.bgm === 'radial') x.fillStyle = stops(x.createRadialGradient(cx, cx, 0, cx, cx, N * .72), cols);
+  else if (o.bgm === 'conic') x.fillStyle = x.createConicGradient ? stops(x.createConicGradient(a, cx, cx), [...cols, cols[0]]) : stops(x.createLinearGradient(0, 0, N, N), cols);
+  else x.fillStyle = o.c1;
+  x.fillRect(0, 0, N, N);
+  if (o.bgm === 'mesh') for (let i = 0; i < 6; i++) { const px = r() * N, py = r() * N, rd = N * (.4 + r() * .5), c = cols[i % cols.length], g = x.createRadialGradient(px, py, 0, px, py, rd); g.addColorStop(0, c); g.addColorStop(1, c + '00'); x.fillStyle = g; x.fillRect(0, 0, N, N); }
+
+  /* pattern */
+  if (o.pat !== 'none') {
+    const s = o.ps * k, w = Math.max(1, s * o.pw / 100), P = o.pat, a0 = -N * .6, a1 = N * 1.6;
+    x.save(); x.globalAlpha = o.pa / 100; x.fillStyle = x.strokeStyle = o.pc; x.lineWidth = w;
+    x.translate(cx, cx); x.rotate(o.pr * Math.PI / 180); x.translate(-cx, -cx);
+    if (P === 'stripes' || P === 'grid') for (let p = a0; p < a1; p += s) { x.fillRect(p, a0, w, a1 - a0); if (P === 'grid') x.fillRect(a0, p, a1 - a0, w); }
+    else if (P === 'rings') for (let q = s; q < N * 1.5; q += s) { x.beginPath(); x.arc(cx, cx, q, 0, 7); x.stroke(); }
+    else if (P === 'rays') { const n = Math.max(6, Math.round(N * 2 / s)) & ~1; for (let i = 0; i < n; i += 2) { x.beginPath(); x.moveTo(cx, cx); x.arc(cx, cx, N * 1.5, i / n * 6.2832, (i + 1) / n * 6.2832); x.fill(); } }
+    else if (P === 'waves' || P === 'zigzag') for (let yy = a0; yy < a1; yy += s * 1.2) { x.beginPath(); for (let xx = a0; xx <= a1; xx += P === 'waves' ? 4 : s / 2) { const j = P === 'waves' ? Math.sin(xx / s * 2) * s * .4 : ((xx / (s / 2) | 0) % 2 ? 1 : -1) * s * .3; xx === a0 ? x.moveTo(xx, yy + j) : x.lineTo(xx, yy + j); } x.stroke(); }
+    else for (let yy = a0; yy < a1; yy += s) for (let xx = a0; xx < a1; xx += s) {
+      if (P === 'dots') { x.beginPath(); x.arc(xx + s / 2, yy + s / 2, w / 2, 0, 7); x.fill(); }
+      else if (P === 'checker') { if ((Math.round((xx - a0) / s) + Math.round((yy - a0) / s)) % 2) x.fillRect(xx, yy, s, s); }
+      else { x.fillRect(xx + s / 2 - w / 2, yy, w, s); x.fillRect(xx, yy + s / 2 - w / 2, s, w); }
+    }
+    x.restore();
+  }
+
+  const SHP = [...(o.shapes || []), ...randShapes(o, title, rng(hash('s' + o.seed + title)))];
+  SHP.filter((s_) => !s_.over).forEach((s_) => shape(x, N, s_, k));
+
+  /* text */
+  const clean = (s) => s.replace(/[\[(].*?[\])]/g, ' ').replace(/\s[-|–—:]\s.*$/, '').replace(/\s+/g, ' ').trim() || s, w0 = clean(title).split(/\s+/);
+  let T = o.src === 'full' ? title : o.src === 'cleaned' ? clean(title) : o.src === 'initials' ? w0.map((w) => [...w][0]).join('').slice(0, 4) : o.src === 'first word' ? w0[0] : o.src === 'first two words' ? w0.slice(0, 2).join(' ') : w0[w0.length - 1];
+  T = o.cs === 'UPPER' ? T.toUpperCase() : o.cs === 'lower' ? T.toLowerCase() : o.cs === 'Title' ? T.replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase()) : T;
+  T = (T || title || ' ').trim() || ' ';
+  x.save();
+  if ('letterSpacing' in x) x.letterSpacing = o.ls * k + 'px';
+  const pad = o.tp / 100 * N, bw_ = N - 2 * pad, fam = FONTS[NAMES.indexOf(o.font)], ft = (s) => `${o.it ? 'italic ' : ''}${o.wt} ${s}px ${fam}`;
+  const wrap = (s) => { x.font = ft(s); const l = []; let cur = ''; for (const w of T.split(/\s+/)) { const tr = cur ? cur + ' ' + w : w; if (cur && x.measureText(tr).width > bw_) { l.push(cur); cur = w; } else cur = tr; } l.push(cur); return l; };
+  let fs = N * .6 * o.fs / 100, L = wrap(fs);
+  while (fs > 8) { L = wrap(fs); if (Math.max(...L.map((l) => x.measureText(l).width)) <= bw_ && L.length * fs * o.lh / 100 <= bw_) break; fs *= .94; }
+  const lh = fs * o.lh / 100, y0 = -(L.length - 1) * lh / 2, ax = o.al === 'left' ? -bw_ / 2 : o.al === 'right' ? bw_ / 2 : 0;
+  const tcv = o.tc / 100; let dk = false, f1 = o.t1, f2 = o.t2;
+  if (tcv > 0) {
+    const t8 = document.createElement('canvas'); t8.width = t8.height = 8; const tq = t8.getContext('2d'), bh = Math.min(N, L.length * lh + fs * .5);
+    tq.drawImage(cv, pad, Math.max(0, cx + o.ty / 100 * N - bh / 2), bw_, bh, 0, 0, 8, 8);
+    const dd = tq.getImageData(0, 0, 8, 8).data; let sm = 0; for (let i = 0; i < dd.length; i += 4) sm += .299 * dd[i] + .587 * dd[i + 1] + .114 * dd[i + 2];
+    dk = sm / 64 / 255 > .5; const tg = dk ? '#000000' : '#ffffff'; f1 = mix(o.t1, tg, tcv); f2 = mix(o.t2, tg, tcv);
+  }
+  const swE = tcv > 0 ? Math.max(o.sw, tcv * 12) : o.sw, scE = o.sw > 0 || !tcv ? o.sc : (dk ? '#ffffff' : '#000000');
+  x.translate(cx + o.tx / 100 * N, cx + o.ty / 100 * N); x.rotate(o.rot * Math.PI / 180);
+  x.font = ft(fs); x.textAlign = o.al; x.textBaseline = 'middle'; x.lineJoin = o.sj; x.miterLimit = 2;
+  let fill = f1;
+  if (o.tm === 'gradient' || o.tm === 'rainbow') { const g = x.createLinearGradient(0, -L.length * lh / 2, 0, L.length * lh / 2); if (o.tm === 'rainbow') for (let i = 0; i < 6; i++) g.addColorStop(i / 5, hsl(i * 60, 90, 60)); else { g.addColorStop(0, f1); g.addColorStop(1, f2); } fill = g; }
+  else if (o.tm === 'auto contrast') fill = (lum(o.c1) + lum(o.c2)) / 2 > .55 ? '#000000' : '#ffffff';
+  if (tcv > 0) {
+    const ww = Math.max(...L.map((l) => x.measureText(l).width)) + fs * .5, hh = L.length * lh + fs * .3, px0 = ax + (o.al === 'left' ? ww / 2 - fs * .25 : o.al === 'right' ? -ww / 2 + fs * .25 : 0);
+    x.save(); x.shadowColor = x.fillStyle = dk ? `rgba(255,255,255,${tcv * .5})` : `rgba(0,0,0,${tcv * .5})`; x.shadowBlur = tcv * 30 * k; x.fillRect(px0 - ww / 2, -hh / 2, ww, hh); x.restore();
+  }
+  const each = (f) => L.forEach((l, i) => f(l, ax, y0 + i * lh)), outer = (swE + o.sw2) * 2 * k, inner = swE * 2 * k;
+  if (o.ex > 0) { x.fillStyle = x.strokeStyle = o.exc; x.lineWidth = outer; const ea = o.exa * Math.PI / 180; for (let s = Math.round(o.ex * k); s > 0; s--) each((l, a_, y) => { const px = a_ + Math.cos(ea) * s, py = y + Math.sin(ea) * s; x.fillText(l, px, py); if (outer > 0) x.strokeText(l, px, py); }); }
+  if (o.shx || o.shy || o.shb) { x.shadowColor = o.shc + Math.round(o.sha * 2.55).toString(16).padStart(2, '0'); x.shadowOffsetX = o.shx * k; x.shadowOffsetY = o.shy * k; x.shadowBlur = o.shb * k; x.fillStyle = o.sc2; x.strokeStyle = o.sw2 > 0 ? o.sc2 : scE; x.lineWidth = outer; each((l, a_, y) => { if (outer > 0) x.strokeText(l, a_, y); x.fillText(l, a_, y); }); x.shadowColor = 'transparent'; }
+  if (o.gl > 0) { x.shadowColor = o.glc; x.shadowOffsetX = x.shadowOffsetY = 0; x.shadowBlur = o.gl * k; x.fillStyle = o.glc; for (let i = 0; i < 2; i++) each((l, a_, y) => x.fillText(l, a_, y)); x.shadowColor = 'transparent'; x.shadowBlur = 0; }
+  if (o.sw2 > 0) { x.strokeStyle = o.sc2; x.lineWidth = outer; each((l, a_, y) => x.strokeText(l, a_, y)); }
+  if (swE > 0) { x.strokeStyle = scE; x.lineWidth = inner; each((l, a_, y) => x.strokeText(l, a_, y)); }
+  x.fillStyle = fill; each((l, a_, y) => x.fillText(l, a_, y));
+  x.restore();
+
+  SHP.filter((s_) => s_.over).forEach((s_) => shape(x, N, s_, k));
+  /* frame + vignette */
+  if (o.bw > 0) { x.strokeStyle = o.bc; x.lineWidth = o.bw * 2 * k; path(0, R); x.stroke(); }
+  if (o.bw2 > 0) { const i = (o.bw + o.bgp) * k + o.bw2 * k / 2; x.strokeStyle = o.bc2; x.lineWidth = o.bw2 * k; path(i, R - i); x.stroke(); }
+  if (o.vig > 0) { const g = x.createRadialGradient(cx, cx, N * .25, cx, cx, N * .75); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${o.vig / 100})`); x.fillStyle = g; x.fillRect(0, 0, N, N); }
+  x.restore();
+
+  /* pixel passes */
+  if (o.pix > 1) pixelate(cv, Math.max(1, Math.round(o.pix * k)));
+  if (o.grain || o.scan || o.rgb || o.gli || o.br !== 100 || o.ct !== 100 || o.sa !== 100 || o.hue || o.inv) {
+    const im = x.getImageData(0, 0, N, N), d = im.data;
+    if (o.gli) { const rr = rng(hash('g' + title + o.seed)); for (let i = 0; i < o.gli * 2; i++) { const y = rr() * N | 0, h = (rr() * .06 * N + 2) | 0, sh = ((rr() - .5) * o.gli * k * 6) | 0; for (let yy = y; yy < Math.min(N, y + h); yy++) { const s = yy * N * 4, row = d.slice(s, s + N * 4); for (let xx = 0; xx < N; xx++) { const sx = (xx - sh + N * 4) % N; d.set(row.subarray(sx * 4, sx * 4 + 4), s + xx * 4); } } } }
+    if (o.rgb) { const src = d.slice(), off = Math.round(o.rgb * k); for (let yy = 0; yy < N; yy++) for (let xx = 0; xx < N; xx++) { const i = (yy * N + xx) * 4; d[i] = src[(yy * N + Math.min(N - 1, xx + off)) * 4]; d[i + 2] = src[(yy * N + Math.max(0, xx - off)) * 4 + 2]; } }
+    const cs = Math.cos(o.hue * Math.PI / 180), sn = Math.sin(o.hue * Math.PI / 180);
+    const m = [.213 + cs * .787 - sn * .213, .715 - cs * .715 - sn * .715, .072 - cs * .072 + sn * .928, .213 - cs * .213 + sn * .143, .715 + cs * .285 + sn * .140, .072 - cs * .072 - sn * .283, .213 - cs * .213 - sn * .787, .715 - cs * .715 + sn * .715, .072 + cs * .928 + sn * .072];
+    const b = o.br / 100, c = o.ct / 100, sa = o.sa / 100, sp = Math.max(2, Math.round(4 * k)), gr = rng(hash('n' + title + o.seed));
+    for (let i = 0; i < d.length; i += 4) {
+      let r_ = d[i], g_ = d[i + 1], b_ = d[i + 2];
+      if (o.hue) { const R2 = m[0] * r_ + m[1] * g_ + m[2] * b_, G2 = m[3] * r_ + m[4] * g_ + m[5] * b_; b_ = m[6] * r_ + m[7] * g_ + m[8] * b_; r_ = R2; g_ = G2; }
+      const l = .299 * r_ + .587 * g_ + .114 * b_;
+      r_ = ((l + (r_ - l) * sa) - 128) * c + 128; g_ = ((l + (g_ - l) * sa) - 128) * c + 128; b_ = ((l + (b_ - l) * sa) - 128) * c + 128;
+      r_ *= b; g_ *= b; b_ *= b;
+      if (o.inv) { r_ = 255 - r_; g_ = 255 - g_; b_ = 255 - b_; }
+      if (o.grain) { const n = (gr() - .5) * o.grain * 2.5; r_ += n; g_ += n; b_ += n; }
+      if (o.scan && (((i / 4 / N) / (sp / 2)) | 0) % 2) { const f = 1 - o.scan / 100 * .7; r_ *= f; g_ *= f; b_ *= f; }
+      d[i] = r_; d[i + 1] = g_; d[i + 2] = b_;
+    }
+    x.putImageData(im, 0, 0);
+  }
+  if (o.dm !== 'none') dither(cv, o, k, rng(hash('d' + title + o.seed)));
+  if (R > 0) { x.save(); x.beginPath(); x.rect(0, 0, N, N); x.roundRect(0, 0, N, N, R); x.fillStyle = o.matte; x.fill('evenodd'); x.restore(); }
+}
+
+/* per-station options */
+function opts(title) {
+  if (V.vm === 'identical' && !V.each) return V;
+  const o = { ...V }, r = rng((hash(title) + V.seed * 7919) >>> 0);
+  if (V.vm === 'hue shift') o.hue = (V.hue + r() * 360) % 360;
+  else if (V.vm !== 'identical') randomize(o, V.vm === 'random colors' ? 'colors' : 'all', r);
+  if (V.each) randomize(o, 'all', r, V.rp);
+  return o;
+}
+
+/* ---------- UI ---------- */
+const mk = (c) => {
+  const w = document.createElement('div'); w.className = 'setting-item' + (c.ty === 'k' ? ' checkbox-item' : '');
+  const id = 'i_' + c.id;
+  let h;
+  if (c.ty === 's') h = `<select id="${id}">${c.a.map((o) => `<option>${o}</option>`).join('')}</select>`;
+  else if (c.ty === 'r') h = `<input type="range" id="${id}" min="${c.a}" max="${c.b}" step="${c.st || 1}">`;
+  else if (c.ty === 'c') h = `<input type="color" id="${id}">`;
+  else if (c.ty === 'k') h = `<input type="checkbox" id="${id}">`;
+  else h = `<input type="text" id="${id}">`;
+  w.innerHTML = c.ty === 'k' ? h + `<label for="${id}">${c.lab}</label>` : `<label for="${id}">${c.lab} <b id="o_${c.id}"></b></label>` + h;
+  return w;
+};
+G.forEach(([g, it], gi) => {
+  const d = document.createElement('details'); d.className = 'advanced-settings'; if (gi < 2 || g === 'Text' || g === 'Randomize') d.open = true;
+  d.innerHTML = `<summary>${g}</summary><div class="settings-grid grid"></div>`;
+  it.forEach(([id]) => d.lastChild.appendChild(mk(CM[id])));
+  $('panels').appendChild(d);
+});
+V.shapes = [];
+const shd = [...$('panels').children].find((d) => d.firstChild.textContent === 'Shapes');
+shd.insertAdjacentHTML('beforeend', '<div class="input-group" style="padding:10px;border-top:var(--bw) solid var(--line);background:var(--panel)"><button id="shAdd">Add shape</button><button id="shRnd">Add random</button><button id="shClr">Clear shapes</button></div><div id="shList" style="padding:0 10px 10px;background:var(--panel);font-size:.85em"></div>');
+function listShapes() { $('shList').innerHTML = V.shapes.length ? V.shapes.map((s, i) => `<div>${i + 1}. ${s.t} ${Math.round(s.sz)}% at ${Math.round(s.x)},${Math.round(s.y)} (${s.over ? 'over' : 'behind'} text) <u data-i="${i}" style="cursor:pointer;color:var(--pink)">remove</u></div>`).join('') : '<div style="color:var(--muted)">No manual shapes yet. Set the "New shape" options above, then click Add shape.</div>'; }
+$('shAdd').onclick = () => { V.shapes.push({ t: V.n_t, col: V.n_col, sz: V.n_sz, x: V.n_x, y: V.n_y, rot: V.n_rot, op: V.n_op, fill: V.n_fill, lw: V.n_lw, over: V.n_l === 'over text' }); listShapes(); upd(); };
+$('shRnd').onclick = () => { V.shapes.push(...randShapes({ ...V, shn: 1, shl: 'mixed' }, '', Math.random)); listShapes(); upd(); };
+$('shClr').onclick = () => { V.shapes = []; listShapes(); upd(); };
+$('shList').onclick = (e) => { const i = e.target.dataset.i; if (i !== undefined) { V.shapes.splice(+i, 1); listShapes(); upd(); } };
+listShapes();
+function sync() {
+  ALL.forEach((c) => {
+    const el = $('i_' + c.id);
+    if (c.ty === 'k') el.checked = V[c.id]; else el.value = V[c.id];
+    if (c.ty === 'r') $('o_' + c.id).textContent = V[c.id];
+  });
+}
+$('panels').addEventListener('input', (e) => {
+  const c = CM[e.target.id.slice(2)]; if (!c) return;
+  V[c.id] = c.ty === 'k' ? e.target.checked : c.ty === 'r' ? +e.target.value : e.target.value;
+  if (c.ty === 'r') $('o_' + c.id).textContent = V[c.id];
+  upd();
+});
+
+let parsed = null, srcName = 'playlist.m3u', titles = DEMO.slice(), raf;
+const upd = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); };
+function paint() {
+  keepLast();
+  const t = $('sample').value || titles[0];
+  draw($('main'), t, opts(t));
+  [...$('thumbs').children].forEach((cv, i) => draw(cv, titles[i], opts(titles[i])));
+}
+function setTitles(list) {
+  titles = list.length ? list : DEMO.slice();
+  $('sample').innerHTML = titles.slice(0, 400).map((t) => `<option>${t.replace(/</g, '&lt;')}</option>`).join('');
+  $('thumbs').innerHTML = '';
+  for (let i = 0; i < 6; i++) { const cv = document.createElement('canvas'); cv.width = cv.height = 128; cv.title = titles[i % titles.length]; if (i >= titles.length) titles.push(DEMO[i]); $('thumbs').appendChild(cv); }
+  upd();
+}
+const rnd = (scope) => { randomize(V, scope, Math.random, V.rp); sync(); upd(); };
+$('rAll').onclick = () => rnd('all'); $('rCol').onclick = () => rnd('colors'); $('rSty').onclick = () => rnd('style');
+$('rRes').onclick = () => { ALL.forEach((c) => (V[c.id] = c.def)); V.shapes = []; listShapes(); sync(); upd(); };
+$('sample').onchange = upd;
+
+/* ---------- save / load looks ---------- */
+const LK = 'm3u-logo-designer-look';
+const OUT = ['useurl', 'urlpre', 'pre'];
+function lookData() { const st = {}; ALL.forEach((c) => (st[c.id] = V[c.id])); return { app: 'm3u-logo-designer', version: 1, settings: st, shapes: V.shapes }; }
+function applyLook(d, keepOut) {
+  if (!d || typeof d !== 'object' || !d.settings) throw Error('Not a look file.');
+  ALL.forEach((c) => {
+    const v = d.settings[c.id]; if (v === undefined || (keepOut && OUT.includes(c.id))) return;
+    if (c.ty === 'r' && typeof v === 'number') V[c.id] = Math.min(c.b, Math.max(c.a, v));
+    else if (c.ty === 's' && c.a.includes(v)) V[c.id] = v;
+    else if (c.ty === 'c' && /^#[0-9a-f]{6}$/i.test(v)) V[c.id] = v;
+    else if (c.ty === 'k' && typeof v === 'boolean') V[c.id] = v;
+    else if (c.ty === 't' && typeof v === 'string') V[c.id] = v;
+  });
+  const n = (v) => typeof v === 'number' && isFinite(v);
+  V.shapes = (Array.isArray(d.shapes) ? d.shapes : []).filter((s) => s && SHT.includes(s.t) && /^#[0-9a-f]{6}$/i.test(s.col) && [s.sz, s.x, s.y, s.rot, s.op, s.lw].every(n)).map((s) => ({ t: s.t, col: s.col, sz: s.sz, x: s.x, y: s.y, rot: s.rot, op: s.op, fill: s.fill === 'outline' ? 'outline' : 'filled', lw: s.lw, over: !!s.over }));
+  listShapes(); sync(); upd();
+}
+$('lkSave').onclick = () => { const a = $('dl'); if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href); a.href = URL.createObjectURL(new Blob([JSON.stringify(lookData(), null, 2)], { type: 'application/json' })); a.download = 'm3u-logo-look.json'; a.click(); };
+$('lkLoad').onclick = () => $('lkFile').click();
+$('lkFile').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { applyLook(JSON.parse(await f.text()), true); $('summaryLine').textContent = `Loaded look "${f.name}" (output folder and URL prefix were kept as they are).`; } catch (er) { alert('Could not load look: ' + er.message); } };
+const keepLast = () => { try { localStorage.setItem(LK, JSON.stringify(lookData())); } catch (e) { /* storage unavailable */ } };
+
+/* ---------- M3U parsing (same logic as the sibling tools) ---------- */
+function splitTitle(line) { let q = false; for (let i = 0; i < line.length; i++) { const ch = line[i]; if (ch === '"') q = !q; else if (ch === ',' && !q) return line.slice(i + 1).trim(); } return ''; }
+function parseM3U(text) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map((l) => l.trim());
+  let extm3u = '#EXTM3U', saw = false, pe = null, px = [];
+  const header = [], entries = [], flush = (u) => { entries.push({ extinf: pe, extra: px, url: u }); pe = null; px = []; };
+  for (const l of lines) {
+    if (!l) continue;
+    if (/^#EXTM3U/i.test(l)) { if (!saw) extm3u = l; continue; }
+    saw = true;
+    if (/^#EXTINF/i.test(l)) { if (pe) flush(null); pe = l; continue; }
+    if (l[0] === '#') { (!entries.length && !pe ? header : px).push(l); continue; }
+    flush(l);
+  }
+  if (pe) flush(null);
+  entries.forEach((e) => (e.title = e.extinf ? splitTitle(e.extinf) : ''));
+  return { extm3u, header, entries };
+}
+const renderEntry = (e, ov) => [...(e.extinf ? [ov || e.extinf] : []), ...e.extra, ...(e.url ? [e.url] : [])];
+const withLogo = (ext, p) => { const a = `tvg-logo="${p}"`; return /tvg-logo\s*=\s*"[^"]*"/i.test(ext) ? ext.replace(/tvg-logo\s*=\s*"[^"]*"/i, a) : ext.replace(/^(#EXTINF:\s*-?[\d.]+)/i, `$1 ${a}`); };
+
+function load(text, name) {
+  parsed = parseM3U(text); srcName = name;
+  const list = [...new Set(parsed.entries.filter((e) => e.title).map((e) => e.title))];
+  setTitles(list);
+  const missing = parsed.entries.filter((e) => e.title && !/tvg-logo\s*=\s*"[^"]+"/i.test(e.extinf)).length;
+  $('summaryLine').textContent = `Loaded ${parsed.entries.length} entries, ${list.length} unique titles, ${missing} without a logo.`;
+}
+$('fileButton').onclick = async () => { const f = $('fileInput').files[0]; if (!f) return alert('Please upload an M3U file.'); load(await f.text(), f.name); };
+$('textButton').onclick = () => { const t = $('textInput').value; if (!t.trim()) return alert('Please paste M3U content.'); load(t, 'pasted_streams.m3u'); };
+$('urlButton').onclick = async () => {
+  let u = $('urlInput').value.trim(); if (!u) return alert('Please enter an online M3U URL.');
+  try {
+    const x = new URL(u);
+    if (x.hostname === 'github.com') { const p = x.pathname.split('/').filter(Boolean); if (p.length >= 5 && p[2] === 'raw') { const [o, r, , ...rest] = p; u = `https://raw.githubusercontent.com/${o}/${r}/${rest.join('/')}`; } }
+    const res = await fetch(u, { cache: 'no-store' }); if (!res.ok) throw Error('HTTP ' + res.status);
+    const t = await res.text(); if (!/#EXT(M3U|INF)/i.test(t)) throw Error('Not an M3U playlist.');
+    load(t, decodeURIComponent(x.pathname.split('/').pop() || 'playlist.m3u'));
+  } catch (e) { alert(`Error fetching online M3U file: ${e.message} (the server may block browser CORS requests)`); }
+};
+
+/* ---------- ZIP (store, no compression, no dependencies) ---------- */
+const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc = (u) => { let c = -1; for (let i = 0; i < u.length; i++) c = crcT[(c ^ u[i]) & 255] ^ (c >>> 8); return ~c >>> 0; };
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], cd = [], D = new Date();
+  const dt = (D.getHours() << 11) | (D.getMinutes() << 5) | (D.getSeconds() >> 1), dd = ((D.getFullYear() - 1980) << 9) | ((D.getMonth() + 1) << 5) | D.getDate();
+  let off = 0;
+  for (const f of files) {
+    const nm = enc.encode(f.name), c = crc(f.data), n = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x800, true); h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, c, true); h.setUint32(18, n, true); h.setUint32(22, n, true); h.setUint16(26, nm.length, true);
+    parts.push(h.buffer, nm, f.data);
+    const e = new DataView(new ArrayBuffer(46));
+    e.setUint32(0, 0x02014b50, true); e.setUint16(4, 20, true); e.setUint16(6, 20, true); e.setUint16(8, 0x800, true); e.setUint16(12, dt, true); e.setUint16(14, dd, true); e.setUint32(16, c, true); e.setUint32(20, n, true); e.setUint32(24, n, true); e.setUint16(28, nm.length, true); e.setUint32(42, off, true);
+    cd.push(e.buffer, nm); off += 30 + nm.length + n;
+  }
+  let cs = 0; cd.forEach((b) => (cs += b.byteLength));
+  const z = new DataView(new ArrayBuffer(22));
+  z.setUint32(0, 0x06054b50, true); z.setUint16(8, files.length, true); z.setUint16(10, files.length, true); z.setUint32(12, cs, true); z.setUint32(16, off, true);
+  return new Blob([...parts, ...cd, z.buffer], { type: 'application/zip' });
+}
+
+/* ---------- generate ---------- */
+let cancel = false;
+const slug = (t) => t.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+$('cancelButton').onclick = () => (cancel = true);
+$('goButton').onclick = async () => {
+  if (!parsed || !parsed.entries.length) return alert('Load a playlist first.');
+  cancel = false; $('goButton').disabled = true; $('cancelButton').style.display = 'flex'; $('output').value = '';
+  const N = +V.size, cv = document.createElement('canvas'); cv.width = cv.height = N;
+  const pre = V.pre.trim().replace(/^\.?\/+/, '').replace(/\/*$/, '/').replace(/^\/$/, '');
+  const files = [], map = new Map(), used = new Set(), lines = [parsed.extm3u, ...parsed.header], enc = new TextEncoder();
+  const lp = V.useurl ? V.urlpre.trim().replace(/\/*$/, '/') : pre;
+  const todo = parsed.entries.filter((e) => e.title && (V.ow || !/tvg-logo\s*=\s*"[^"]+"/i.test(e.extinf))).length;
+  let done = 0, made = 0;
+  for (const e of parsed.entries) {
+    if (cancel) break;
+    const need = e.title && (V.ow || !/tvg-logo\s*=\s*"[^"]+"/i.test(e.extinf));
+    if (!need) { lines.push(...renderEntry(e)); continue; }
+    let fn = map.get(e.title);
+    if (!fn) {
+      const hs = hash(e.title).toString(36), sl = slug(e.title);
+      let n = V.plain ? (sl || 'station-' + hs) : (sl ? `${sl}-${hs.slice(0, 5)}` : 'station-' + hs), i = 2; const b = n;
+      while (used.has(n)) n = `${b}-${i++}`;
+      used.add(n); fn = n + '.jpg';
+      draw(cv, e.title, opts(e.title));
+      const blob = await new Promise((r) => cv.toBlob(r, 'image/jpeg', V.q / 100));
+      files.push({ name: pre + fn, data: new Uint8Array(await blob.arrayBuffer()) });
+      map.set(e.title, fn); made++;
+    }
+    lines.push(...renderEntry(e, withLogo(e.extinf, lp + fn)));
+    done++;
+    if (done % 4 === 0) { $('summaryLine').textContent = `Designing logo ${done} of ${todo}: ${e.title}`; await new Promise((r) => setTimeout(r)); }
+  }
+  $('goButton').disabled = false; $('cancelButton').style.display = 'none';
+  if (cancel) { $('summaryLine').textContent = 'Cancelled. Nothing was downloaded.'; return; }
+  const m3u = lines.join('\n') + '\n', stem = srcName.replace(/\.m3u8?$/i, ''), ext = (/\.(m3u8?)$/i.exec(srcName) || [0, 'm3u'])[1].toLowerCase();
+  files.unshift({ name: `${stem}_logos.${ext}`, data: enc.encode(m3u) });
+  $('output').value = m3u;
+  const a = $('dl'); if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href);
+  a.href = URL.createObjectURL(zip(files)); a.download = `${stem}_logos.zip`; a.click();
+  $('summaryLine').textContent = `Done: ${made} images, ${done} entries updated. ${V.useurl ? ` tvg-logo points to ${lp}, so upload the "${pre || './'}" folder there.` : ` Unzip and keep "${stem}_logos.${ext}" next to its "${pre || './'}" folder.`}`;
+};
+
+try { const d = JSON.parse(localStorage.getItem(LK)); if (d) applyLook(d, false); } catch (e) { /* no saved look */ }
+sync(); setTitles(DEMO.slice());
+})();
+</script>
+</body>
+</html>
